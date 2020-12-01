@@ -1,0 +1,14 @@
+= GMperf
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+:toc: left
+:toclevels: 5
+
+This is a GMod developer tools addon to improve performances.
+
+WARNING: Even if it shouldn't be unstable or unsafe, this is a development addon that should be carefully used.
