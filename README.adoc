@@ -9,6 +9,29 @@ endif::[]
 :toc: left
 :toclevels: 5
 
+image::icon.jpg[GMperf,256,256]
+
 This is a GMod developer tools addon to improve performances.
 
 WARNING: Even if it shouldn't be unstable or unsafe, this is a development addon that should be carefully used.
+
+== Command-line
+
+The `gmperf` console command is available for superadmins.
+
+=== `gmperf codegui [reset]`
+
+Open a GUI to run shared code (client-side/server-side). The local variable `runner` contains the player running the code. If `reset` is passed, the GUI is rebuilt.
+
+== API
+
+`GMperf` is exposed as a global when loaded.
+
+[source, lua]
+----
+-- libs
+GMperf.ELProfiler -- https://github.com/ImagicTheCat/ELProfiler
+
+-- Send message to player console (net limit).
+GMperf.SendConsole(player, msg)
+----
