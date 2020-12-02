@@ -85,17 +85,38 @@ elseif CLIENT then
       GMperf.codegui = vgui.Create("DFrame")
       GMperf.codegui_html = vgui.Create("DHTML", GMperf.codegui)
       GMperf.codegui_html:Dock(FILL)
-      GMperf.codegui_html:AddFunction("gmperf", "runcode", function(code) 
+      GMperf.codegui_html:AddFunction("gmperf", "runcode", function(code)
         -- send code to server
         net.Start("gmperf_runcode")
           net.WriteString(code)
         net.SendToServer()
-        -- save code for the client
-        LocalPlayer():SetPData("gmperf_runcode_save", code)
       end)
-      GMperf.codegui_html:AddFunction("gmperf", "getsave", function() 
+      GMperf.codegui_html:AddFunction("gmperf", "savecode", function(code)
+        -- save code for the client
+        LocalPlayer():SetPData("gmperf_runcode_code", code)
+      end)
+      GMperf.codegui_html:AddFunction("gmperf", "getsave_code", function()
         -- return saved code
-        return LocalPlayer():GetPData("gmperf_runcode_save","")
+        return LocalPlayer():GetPData("gmperf_runcode_code", [[
+if SERVER then
+  runner:ChatPrint("server-side")
+elseif CLIENT then
+  runner:ChatPrint("client-side")
+end
+        ]])
+      end)
+      GMperf.codegui_html:AddFunction("gmperf", "saveconfig", function(config)
+        -- save config for the client
+        LocalPlayer():SetPData("gmperf_runcode_config", config)
+      end)
+      GMperf.codegui_html:AddFunction("gmperf", "getsave_config", function()
+        -- return saved config
+        return LocalPlayer():GetPData("gmperf_runcode_config", [[
+// Ace v1.2.5 config (JS) (see https://ace.c9.io)
+editor.setTheme("ace/theme/monokai");
+editor.setOption("fontSize", 14);
+// editor.setKeyboardHandler('ace/keyboard/vim');
+        ]])
       end)
       -- window
       GMperf.codegui:SetSize(600, 450)
@@ -105,53 +126,73 @@ elseif CLIENT then
       GMperf.codegui:SetSizable(true)
       GMperf.codegui:SetDeleteOnClose(false)
       GMperf.codegui:Center()
-      -- button
+      -- run button
       GMperf.codegui_run = vgui.Create("DButton")
       GMperf.codegui_run:SetPos(100, 5)
       GMperf.codegui_run:SetParent(GMperf.codegui)
       GMperf.codegui_run:SetText("run")
       GMperf.codegui_run:SetSize(30,15)
       function GMperf.codegui_run.DoClick()
-        GMperf.codegui_html:Call("onruncode()")
+        GMperf.codegui_html:Call("lua_run()")
       end
+      -- config button
+      GMperf.codegui_config = vgui.Create("DButton")
+      GMperf.codegui_config:SetPos(140, 5)
+      GMperf.codegui_config:SetParent(GMperf.codegui)
+      GMperf.codegui_config:SetText("Ace config")
+      GMperf.codegui_config:SetSize(60,15)
+      function GMperf.codegui_config.DoClick()
+        GMperf.codegui_html:Call("lua_switch_config()")
+      end
+      -- DHTML code
       GMperf.codegui_html:SetHTML([[
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <title>GMperf runcode</title>
-<style type="text/css" media="screen">
-    #editor { 
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
+  <style type="text/css" media="screen">
+    #editor{
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
     }
-</style>
+  </style>
 </head>
 <body>
+  <div id="editor">
+  </div>
 
-<div id="editor">
-if SERVER then
-  runner:ChatPrint("server-side")
-elseif CLIENT then
-  runner:ChatPrint("client-side")
-end
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.5/ace.js" type="text/javascript" charset="utf-8"></script>
-<script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.5/ace.js" type="text/javascript" charset="utf-8"></script>
+  <script>
     editor = ace.edit("editor");
-    editor.setTheme("ace/theme/monokai");
-    editor.getSession().setMode("ace/mode/lua");
+    editor.session.setMode("ace/mode/lua");
+    eval(gmperf.getsave_config());
+    editor.session.setValue(gmperf.getsave_code());
 
-    function onruncode(){ gmperf.runcode(editor.getValue()); }
+    function lua_run(){
+      gmperf.savecode(editor.getValue());
+      gmperf.runcode(editor.getValue());
+    }
 
-    var save = gmperf.getsave();
-    if(save.length > 0)
-      editor.setValue(save);
-</script>
-
+    var code_mode = true;
+    function lua_switch_config(){
+      if(code_mode){
+        gmperf.savecode(editor.getValue());
+        editor.session.setMode("ace/mode/javascript");
+        editor.session.setValue(gmperf.getsave_config());
+      }
+      else{
+        var cfg = editor.getValue();
+        gmperf.saveconfig(cfg);
+        eval(cfg);
+        editor.session.setMode("ace/mode/lua");
+        editor.session.setValue(gmperf.getsave_code());
+      }
+      code_mode = !code_mode;
+    }
+  </script>
 </body>
 </html>
       ]])
