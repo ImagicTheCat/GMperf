@@ -9,21 +9,28 @@ if SERVER then
   -- net strings
   util.AddNetworkString("gmperf_opencodegui")
   util.AddNetworkString("gmperf_runcode")
+  util.AddNetworkString("gmperf_runcode_error")
   util.AddNetworkString("gmperf_sendconsole")
-
   -- Send message to player console (net limit).
   function GMperf.SendConsole(player, msg)
     net.Start("gmperf_sendconsole")
       net.WriteString(msg)
     net.Send(player)
   end
-
+  local function runcode_error(player, err)
+    net.Start("gmperf_runcode_error")
+      net.WriteString(err)
+    net.Send(player)
+  end
   local function runcode(code, player)
     if IsValid(player) and player:IsPlayer() then
-      code = "local runner = Entity("..player:EntIndex().."); "..code
+      code = "local runner = ...; "..code
+      local f = CompileString(code, "gmperf_runcode/server", false)
+      if type(f) == "function" then
+        local ok, err = pcall(f, player)
+        if not ok then runcode_error(player, err) end
+      else runcode_error(player, f) end
     end
-    local err = RunString(code, "gmperf_runcode/server", false)
-    if err then GMperf.SendConsole(player, err) end
   end
   -- runcode handler
   net.Receive("gmperf_runcode",function(len, player)
@@ -52,10 +59,17 @@ if SERVER then
     end
   end)
 elseif CLIENT then
+  local function runcode_error(err)
+    print(err)
+    notification.AddLegacy("GMperf runcode error(s), see console.", NOTIFY_ERROR, 5)
+  end
   local function runcode(code)
-    code = "local runner = LocalPlayer(); "..code
-    local err = RunString(code, "gmperf_runcode/client", false)
-    if err then print(err) end
+    code = "local runner = ...; "..code
+    local f = CompileString(code, "gmperf_runcode/client", false)
+    if type(f) == "function" then
+      local ok, err = pcall(f, LocalPlayer())
+      if not ok then runcode_error(err) end
+    else runcode_error(f) end
   end
   -- client vgui
   local function open_codeGUI(reset)
@@ -151,6 +165,9 @@ end
   end)
   net.Receive("gmperf_runcode", function(len, player)
     runcode(net.ReadString())
+  end)
+  net.Receive("gmperf_runcode_error", function(len, player)
+    runcode_error(net.ReadString())
   end)
   net.Receive("gmperf_sendconsole", function(len, player)
     print(net.ReadString())
