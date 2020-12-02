@@ -13,6 +13,8 @@ image::icon.jpg[GMperf,256,256]
 
 This is a GMod developer tools addon to improve performances.
 
+https://steamcommunity.com/sharedfiles/filedetails/?id=2305848572[workshop]
+
 WARNING: Even if it shouldn't be unstable or unsafe, this is a development addon that should be carefully used.
 
 == Command-line
